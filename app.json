@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "face-demo-app",
+    "name": "Face Demo HRIS",
     "slug": "face-demo-app",
-    "version": "1.0.0",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,15 +16,41 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "id.co.aranustech.facedemo",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 5
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Kamera dipakai untuk verifikasi wajah saat absen.",
+          "enableMicrophonePermission": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      [
+        "./plugins/withAbiFilters",
+        [
+          "arm64-v8a"
+        ]
+      ]
+    ]
   }
 }
