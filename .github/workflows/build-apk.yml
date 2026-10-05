@@ -1,0 +1,82 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📱 Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 🟢 Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Prebuild Android Native Project
+        run: npx expo prebuild --platform android --clean
+
+      - name: 🐘 Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: 🔨 Build Release APK (arm64-v8a)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+
+      - name: 🏷️ Prepare APK Artifact Name
+        id: apk_info
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version || '1.0.0'")
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk dist/FaceDemoHRIS-v${VERSION}.apk
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "apk_path=dist/FaceDemoHRIS-v${VERSION}.apk" >> $GITHUB_OUTPUT
+
+      - name: 📤 Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FaceDemoHRIS-v${{ steps.apk_info.outputs.version }}-apk
+          path: ${{ steps.apk_info.outputs.apk_path }}
+          retention-days: 14
+
+      - name: 🚀 Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.apk_info.outputs.apk_path }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
